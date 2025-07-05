@@ -103,7 +103,7 @@ Açıklamalar / Explanations:
 - `name`: Görünen uygulama adı / Shown app name   
 - `icon`: Emoji veya simge / Emoji or icon  
 - `resizable`: Yeniden boyutlandırılabilir mi? / Is it resizable?  
-- `width`, `height`: Sabit boyutlar (isteğe bağlı) / Fixed dimensions (optional)
+- `width, height`: Sabit boyutlar (isteğe bağlı) — Sadece resizable false olduğu durumlarda geçerlidir./ Fixed dimensions (optional) — Only valid when resizable is set to false.
 
 ---
 
