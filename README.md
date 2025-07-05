@@ -91,7 +91,6 @@ Aynı klasöre `config.json` adında bir dosya ekle ve şunu yaz:
 [
   {
     "name": "Benim Uygulamam",
-    "file": "app.html",
     "icon": "🧠",
     "resizable": true,
     "width": 500,
@@ -101,8 +100,7 @@ Aynı klasöre `config.json` adında bir dosya ekle ve şunu yaz:
 ```
 
 Açıklamalar / Explanations:
-- `name`: Görünen uygulama adı / Shown app name  
-- `file`: Uygulama dosyası (`app.html`) / App file (`app.html`)  
+- `name`: Görünen uygulama adı / Shown app name   
 - `icon`: Emoji veya simge / Emoji or icon  
 - `resizable`: Yeniden boyutlandırılabilir mi? / Is it resizable?  
 - `width`, `height`: Sabit boyutlar (isteğe bağlı) / Fixed dimensions (optional)
