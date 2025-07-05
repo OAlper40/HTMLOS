@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>HTMLOS 2.2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #1e1e1e;
+    overflow: hidden;
+    font-family: sans-serif;
+    color: white;
+  }
+  #desktop {
+    width: 100%;
+    height: calc(100% - 40px);
+    position: relative;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-content: flex-start;
+    background: #222;
+  }
+  .app-icon {
+    width: 80px;
+    height: 80px;
+    background: #333;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 0 8px rgba(0,0,0,0.7);
+    transition: background 0.2s;
+  }
+  .app-icon:hover {
+    background: #555;
+  }
+  .app-icon span.icon {
+    font-size: 32px;
+    margin-bottom: 5px;
+    user-select: none;
+  }
+  .app-icon span.name {
+    font-size: 14px;
+    text-align: center;
+    word-break: break-word;
+  }
+  .window {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+    background: #fff;
+    border: 2px solid #666;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    resize: both;
+    overflow: hidden;
+    z-index: 1000;
+  }
+  .title-bar {
+    height: 30px;
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .title-bar button {
+    background: red;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+  .window iframe {
+    border: none;
+    flex-grow: 1;
+    width: 100%;
+  }
+  #taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    color: white;
+  }
+  #start {
+    background: #444;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #clock {
+    min-width: 60px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<div id="desktop"></div>
+<div id="taskbar">
+  <div id="start">Start</div>
+  <div id="clock"></div>
+</div>
+
+<script>
+  window.runningWindows = window.runningWindows || [];
+
+  const desktop = document.getElementById('desktop');
+
+  // Saat
+  setInterval(() => {
+    document.getElementById("clock").textContent = new Date().toLocaleTimeString();
+  }, 1000);
+
+  // Apps.json'dan yükle
+  fetch('apps/apps.json')
+    .then(res => res.json())
+    .then(apps => {
+      apps.forEach(app => {
+        const icon = document.createElement('div');
+        icon.className = 'app-icon';
+        icon.title = app.name;
+        icon.innerHTML = `<span class="icon">${app.icon || '📦'}</span><span class="name">${app.name}</span>`;
+        icon.onclick = () => openWindow(app);
+        desktop.appendChild(icon);
+      });
+    })
+    .catch(e => alert('Uygulama listesi yüklenemedi'));
+
+  function updateRunningTasks(data) {
+    fetch('/data/runningtasks.json', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+  }
+
+  function openWindow(app) {
+    // Zaten açık mı kontrol et
+    const existing = document.querySelector(`.window[data-app="${app.file}"]`);
+    if (existing) {
+      existing.style.zIndex = ++openWindow.zIndex;
+      return;
+    }
+
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.dataset.app = app.file;
+
+    const width = app.resizable === false && app.width ? app.width : 500;
+    const height = app.resizable === false && app.height ? app.height : 300;
+
+    win.style.width = width + 'px';
+    win.style.height = height + 'px';
+    win.style.top = '100px';
+    win.style.left = '100px';
+    win.style.zIndex = ++openWindow.zIndex;
+
+    win.innerHTML = `
+      <div class="title-bar">
+        <span>${app.name}</span>
+        <button title="Kapat">X</button>
+      </div>
+      <iframe src="apps/${app.file}"></iframe>
+    `;
+
+    desktop.appendChild(win);
+
+    win.querySelector('button').onclick = () => {
+      win.remove();
+      removeRunningTask(app.file);
+    };
+
+    dragElement(win);
+
+    const iframe = win.querySelector('iframe');
+    const titleBarHeight = win.querySelector('.title-bar').offsetHeight;
+    iframe.style.height = (win.clientHeight - titleBarHeight) + 'px';
+
+    new ResizeObserver(() => {
+      iframe.style.height = (win.clientHeight - titleBarHeight) + 'px';
+    }).observe(win);
+
+    addRunningTask(app);
+  }
+  openWindow.zIndex = 1000;
+
+  function addRunningTask(app) {
+    fetch('/data/runningtasks.json')
+      .then(res => res.json())
+      .then(tasks => {
+        if (!tasks.find(t => t.file === app.file)) {
+          tasks.push(app);
+          updateRunningTasks(tasks);
+        }
+      });
+  }
+
+  function removeRunningTask(file) {
+    fetch('/data/runningtasks.json')
+      .then(res => res.json())
+      .then(tasks => {
+        const filtered = tasks.filter(t => t.file !== file);
+        updateRunningTasks(filtered);
+      });
+  }
+
+  // Sürükleme fonksiyonu
+  function dragElement(elmnt) {
+    const header = elmnt.querySelector(".title-bar");
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    header.onmousedown = function(e) {
+      e.preventDefault();
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      document.onmousemove = elementDrag;
+    };
+
+    function elementDrag(e) {
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+      elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+  }
+</script>
+</body>
+</html>

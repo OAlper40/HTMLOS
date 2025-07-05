@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>App Loader</title>
+<style>
+  body {
+    background: #1e1e1e;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+  input[type="file"] {
+    margin: 20px;
+    color: #eee;
+  }
+  #appWindow {
+    width: 80vw;
+    height: 70vh;
+    border: 2px solid #666;
+    box-shadow: 0 0 10px rgba(0,0,0,0.7);
+    margin-top: 20px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h2>📦 Zip Uygulama Yükleyici</h2>
+<input type="file" id="zipFile" accept=".zip" />
+<div id="status"></div>
+<iframe id="appWindow"></iframe>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  const zipInput = document.getElementById('zipFile');
+  const status = document.getElementById('status');
+  const appWindow = document.getElementById('appWindow');
+
+  zipInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    status.textContent = "Zip dosyası okunuyor...";
+    appWindow.style.display = 'none';
+
+    const jszip = new JSZip();
+    try {
+      const zip = await jszip.loadAsync(file);
+      const configFile = zip.file("config.json");
+      const appFile = zip.file("app.html");
+
+      if (!configFile || !appFile) {
+        status.textContent = "ZIP içinde config.json veya app.html bulunamadı!";
+        return;
+      }
+
+      const configText = await configFile.async("string");
+      const appHtml = await appFile.async("string");
+
+      const config = JSON.parse(configText);
+      status.textContent = `Uygulama: ${config.name} yüklendi.`;
+
+      // app.html için blob url yarat
+      const blob = new Blob([appHtml], {type: "text/html"});
+      const blobUrl = URL.createObjectURL(blob);
+
+      // iframe ayarları
+      appWindow.src = blobUrl;
+      appWindow.style.display = 'block';
+      if(config.resizable === false) {
+        appWindow.style.width = (config.width || 400) + "px";
+        appWindow.style.height = (config.height || 300) + "px";
+      } else {
+        appWindow.style.width = "80vw";
+        appWindow.style.height = "70vh";
+      }
+
+    } catch (err) {
+      status.textContent = "Hata: " + err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Notepad",
+    "file": "notepad.html",
+    "icon": "📝",
+    "resizable": true
+  },
+  {
+    "name": "Paint",
+    "file": "paint.html",
+    "icon": "🎨",
+    "resizable": true
+  },
+  {
+    "name": "Calculator",
+    "file": "calculator.html",
+    "icon": "🧮",
+    "resizable": false,
+    "width": 300,
+    "height": 400
+  },
+  {
+    "name": "App Loader",
+    "icon": "📦",
+    "file": "AppLoader.html",
+    "resizable": true
+  },
+  {
+    "name": "Task Manager",
+    "icon": "🧠",
+    "file": "taskmgr.html",
+    "resizable": false,
+    "width": 400,
+    "height":400
+  }
+]

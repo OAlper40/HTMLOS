@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Görev Yöneticisi</title>
+<style>
+  body {
+    background: #1e1e1e;
+    color: white;
+    font-family: sans-serif;
+    padding: 10px;
+  }
+  h1 {
+    margin-bottom: 10px;
+  }
+  #refresh-btn {
+    cursor: pointer;
+    background: #444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  li {
+    margin-bottom: 8px;
+  }
+  button.close-btn {
+    margin-left: 15px;
+    background: red;
+    border: none;
+    color: white;
+    padding: 2px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <h1>Görev Yöneticisi</h1>
+  <button id="refresh-btn">Yenile</button>
+  <ul id="task-list">Yükleniyor...</ul>
+
+  <script>
+    const taskList = document.getElementById('task-list');
+    const refreshBtn = document.getElementById('refresh-btn');
+
+    function fetchTasks() {
+      fetch('/data/runningtasks.json')
+        .then(res => {
+          if (!res.ok) throw new Error('Görev listesi yüklenemedi');
+          return res.json();
+        })
+        .then(tasks => {
+          taskList.innerHTML = '';
+          if (tasks.length === 0) {
+            taskList.textContent = 'Açık program yok';
+            return;
+          }
+          tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.textContent = task.name || task.file;
+
+            const btn = document.createElement('button');
+            btn.textContent = 'Kapat';
+            btn.className = 'close-btn';
+            btn.onclick = () => closeTask(task.file);
+
+            li.appendChild(btn);
+            taskList.appendChild(li);
+          });
+        })
+        .catch(e => {
+          taskList.textContent = e.message;
+        });
+    }
+
+    function closeTask(file) {
+      fetch('/data/runningtasks.json')
+        .then(res => res.json())
+        .then(tasks => {
+          const filtered = tasks.filter(t => t.file !== file);
+          fetch('/data/runningtasks.json', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(filtered)
+          }).then(() => {
+            fetchTasks();
+            // Masaüstündeki pencereyi kapat
+            const win = window.parent.document.querySelector(`.window[data-app="${file}"]`);
+            if (win) win.remove();
+          });
+        });
+    }
+
+    refreshBtn.onclick = fetchTasks;
+
+    // Sayfa yüklendiğinde yükle
+    fetchTasks();
+  </script>
+</body>
+</html>
