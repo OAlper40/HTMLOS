@@ -121,8 +121,8 @@ Açıklamalar / Explanations:
 
 ---
 
-💡 Artık uygulaman otomatik olarak masaüstüne eklenir ve çalıştırılabilir!  
-💡 Your app will now be automatically added to the desktop and can be launched instantly!
+💡 Artık uygulaman Apploader içinde çalışacak 
+💡It will now run inside the app's Apploader
 
 ---
 
